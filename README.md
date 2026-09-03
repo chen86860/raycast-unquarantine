@@ -18,19 +18,23 @@ This Raycast extension turns that into a single search.
 
 ## Commands
 
-| Command | What it does |
-| --- | --- |
-| **Unquarantine Latest App** | The fast path. Picks the one app downloaded in the last 24 hours that Gatekeeper is actually blocking, asks once, and clears it. No system dialogs, no Touch ID. |
-| **Unquarantine Apps** | Browse everything: the apps Gatekeeper blocks by default, or every file still carrying the quarantine attribute. |
-| **Unquarantine Finder Selection** | Clear whatever is selected in Finder — handy right after dragging an app into `/Applications`. |
-| **Open Anyway** | Prefer Apple's own flow? Opens Privacy & Security scrolled to the Security section and names the blocked app. You click the button. |
-| **Open Security Settings** | Plain jump to the Security section. No Accessibility permission needed. |
+| Command                           | What it does                                                                                                                                                     |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Unquarantine Latest App**       | The fast path. Picks the one app downloaded in the last 24 hours that Gatekeeper is actually blocking, asks once, and clears it. No system dialogs, no Touch ID. |
+| **Unquarantine Apps**             | Browse everything: the apps Gatekeeper blocks by default, or every file still carrying the quarantine attribute.                                                 |
+| **Unquarantine Finder Selection** | Clear whatever is selected in Finder — handy right after dragging an app into `/Applications`.                                                                   |
+| **Open Anyway**                   | Prefer Apple's own flow? Opens Privacy & Security scrolled to the Security section and names the blocked app. You click the button.                              |
+| **Open Security Settings**        | Plain jump to the Security section. No Accessibility permission needed.                                                                                          |
 
 Under the hood the first three run `xattr -dr com.apple.quarantine <path>`. Apps you own need no password; when a file needs elevation the extension falls back to an authenticated run and macOS prompts you.
 
 ## Install
 
-Not on the Raycast Store — install it as a local extension:
+This extension isn't on the Raycast Store, so you install it from source. It takes about a minute, and you don't need to know anything about extension development.
+
+**You'll need:** macOS, [Raycast](https://raycast.com), Node.js 22+ and [pnpm](https://pnpm.io) 11+ (`brew install node pnpm`).
+
+**1. Build it**
 
 ```bash
 git clone https://github.com/chen86860/raycast-unquarantine.git
@@ -39,24 +43,40 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` registers the extension with Raycast and starts a watcher. Once the commands appear in Raycast, press <kbd>Ctrl</kbd>+<kbd>C</kbd> — **the extension stays installed** and keeps working without the dev server. Search for `unquarantine` to run it.
+**2. Let it finish, then quit**
 
-Requires macOS, [Raycast](https://raycast.com), Node.js 22+ and [pnpm](https://pnpm.io) 11+. To remove it later, use Raycast's *Manage Extensions* command.
+`pnpm dev` installs the extension into Raycast and stays running as a file watcher. Wait for `built extension successfully`, then press <kbd>Ctrl</kbd>+<kbd>C</kbd>. **The extension stays installed** — the watcher is only for editing the code, and the commands keep working without it.
+
+**3. Use it**
+
+Open Raycast and type `unquarantine`. Five commands show up; `Unquarantine Latest App` is the one you'll want most of the time.
+
+> [!TIP]
+> Give it a hotkey. In _Raycast Settings › Extensions › Unquarantine_, assign an alias (say `unq`) or a keyboard shortcut to **Unquarantine Latest App**. Then unblocking a fresh download is: hotkey, Enter. The same panel holds this extension's preferences.
+
+Prefer not to use the terminal watcher? Raycast's built-in **Import Extension** command points at a folder on disk and does the same registration — you still need `pnpm install` first. To remove the extension later, use **Manage Extensions**.
 
 <details>
 <summary>Optional: grant Accessibility permission</summary>
 
-Only **Open Anyway** needs it, and only to read the name of the blocked app out of the Settings window. Tick Raycast under *System Settings › Privacy & Security › Accessibility*. Without it the command still opens the right pane — it just can't tell you which app is blocked.
+Only **Open Anyway** needs it, and only to read the name of the blocked app out of the Settings window. Tick Raycast under _System Settings › Privacy & Security › Accessibility_. Without it the command still opens the right pane — it just can't tell you which app is blocked.
+
+</details>
+
+<details>
+<summary>Check that it works</summary>
+
+Run **Unquarantine Apps**. If nothing is currently blocked the list is empty — that's the correct answer, not a failure. Switch the dropdown in the search bar to the second option and you should see every app macOS ever tagged, each labelled as blocked or already cleared.
 
 </details>
 
 ## Preferences
 
-| Preference | Default | Effect |
-| --- | --- | --- |
-| Open after unquarantine | on | Launch the app right after clearing it |
-| Extra scan folders | – | Comma-separated paths beyond `/Applications`, `~/Applications` and `~/Downloads` |
-| Re-sign after unquarantine | off | Also run `codesign --force --deep --sign -`, for apps that still report "damaged" |
+| Preference                 | Default | Effect                                                                            |
+| -------------------------- | ------- | --------------------------------------------------------------------------------- |
+| Open after unquarantine    | on      | Launch the app right after clearing it                                            |
+| Extra scan folders         | –       | Comma-separated paths beyond `/Applications`, `~/Applications` and `~/Downloads`  |
+| Re-sign after unquarantine | off     | Also run `codesign --force --deep --sign -`, for apps that still report "damaged" |
 
 ## Having the attribute ≠ being blocked
 
@@ -79,14 +99,14 @@ Scanning stays cheap: the flags filter runs first (70 items down to 8 on a real 
 
 **Clear the attribute** — what `Unquarantine Latest App` does. Deletes `com.apple.quarantine`, so Gatekeeper stops asking. One Raycast confirm, no system dialogs, no Touch ID.
 
-It only looks at `.app` bundles downloaded in the **last 24 hours** that are genuinely blocked; anything without a download timestamp is skipped. Nothing matching means "No app to unlock" — older items are left to `Unquarantine Apps`.
+It only looks at `.app` bundles downloaded in the **last 24 hours** that are genuinely blocked; anything without a download timestamp is skipped. Nothing matching means it tells you there is nothing to unlock — older items are left to `Unquarantine Apps`.
 
 **Use Apple's flow** — what `Open Anyway` supports. System Settings → Open Anyway → confirm → Touch ID. Slower, but macOS records a formal approval. The command only opens and locates; it never clicks for you.
 
 <details>
 <summary>How the blocked app is identified</summary>
 
-The Open Anyway button in System Settings is a SwiftUI button with no accessibility title, so it can't be found by name. It is located instead by the notice next to it — *"X" was blocked to protect your Mac.* — and the app name is parsed out of that string.
+The Open Anyway button in System Settings is a SwiftUI button with no accessibility title, so it can't be found by name. It is located instead by the notice next to it — _"X" was blocked to protect your Mac._ — and the app name is parsed out of that string.
 
 That notice only appears right after you have tried to open a blocked app, and it is cleared when System Settings quits. When it isn't there, the command simply leaves you on the Security section.
 
