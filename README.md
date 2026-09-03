@@ -1,60 +1,111 @@
+<div align="center">
+
+<img src="metadata/promo-hero.png" alt="Unquarantine — open blocked downloads from Raycast" width="820">
+
 # Unquarantine
 
-从网上下载的未签名 App，macOS 会打上 `com.apple.quarantine` 隔离属性，第一次打开要去「系统设置 › 隐私与安全性」翻到底部点 Open Anyway。这个 Raycast 扩展把这件事变成一次搜索。
+**Open blocked downloads from Raycast. One command, one confirm, no Touch ID.**
 
-## 命令
+English · [简体中文](README.zh-CN.md)
 
-| 命令                             | 作用                                                                                                       |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `Unquarantine Latest App`        | **最省事**：取 24 小时内被拦住的那个 App，弹确认框，确认即解除——不走系统弹窗，也不需要 Touch ID              |
-| `Open Anyway`                    | 打开安全设置并定位到被阻止的 App，toast 里报出是哪个；按钮由你自己点                                         |
-| `Unquarantine Apps`              | 扫描 `/Applications`、`~/Applications`、`~/Downloads`，列出**会被拦住的**项，可切换看全部；回车即解除并打开 |
-| `Unquarantine Finder Selection`  | 对访达中当前选中的文件直接解除隔离，适合刚拖进 `/Applications` 的 App                                        |
-| `Open Security Settings`         | 兜底，跳到「隐私与安全性 › Security」分区（URL 带 `?Security` 锚点，不用滚动）                               |
+</div>
 
-除 `Open Anyway` 外的命令底层就是 `xattr -dr com.apple.quarantine <path>`。用户目录下的 App 不需要密码；遇到权限不足会自动回退到带系统密码框的提权执行。
+---
 
-## 设置项
+Download an unsigned app, drag it to `/Applications`, double-click — and macOS tells you it "could not be verified". The official way out is a detour: open System Settings, find Privacy & Security, scroll to the bottom, click **Open Anyway**, confirm again, then authenticate with Touch ID.
 
-- **解除后自动打开**：`Unquarantine Latest App` 解除隔离后直接启动该 App，默认开启
-- **额外扫描目录**：逗号分隔，比如 `~/Desktop, /Volumes/Data/Apps`
-- **解除隔离后重新签名**：勾选后额外执行 `codesign --force --deep --sign -`，用于解决部分 App 去掉隔离属性后仍提示「已损坏，无法打开」的情况
+This Raycast extension turns that into a single search.
 
-## 本地安装
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| **Unquarantine Latest App** | The fast path. Picks the one app downloaded in the last 24 hours that Gatekeeper is actually blocking, asks once, and clears it. No system dialogs, no Touch ID. |
+| **Unquarantine Apps** | Browse everything: the apps Gatekeeper blocks by default, or every file still carrying the quarantine attribute. |
+| **Unquarantine Finder Selection** | Clear whatever is selected in Finder — handy right after dragging an app into `/Applications`. |
+| **Open Anyway** | Prefer Apple's own flow? Opens Privacy & Security scrolled to the Security section and names the blocked app. You click the button. |
+| **Open Security Settings** | Plain jump to the Security section. No Accessibility permission needed. |
+
+Under the hood the first three run `xattr -dr com.apple.quarantine <path>`. Apps you own need no password; when a file needs elevation the extension falls back to an authenticated run and macOS prompts you.
+
+## Install
+
+Not on the Raycast Store — install it as a local extension:
 
 ```bash
+git clone https://github.com/chen86860/raycast-unquarantine.git
+cd raycast-unquarantine
 pnpm install
-pnpm dev     # 首次运行会把扩展装进 Raycast，之后 Ctrl-C 退出即可，扩展保留
+pnpm dev
 ```
 
-## 「有隔离属性」不等于「会被拦」
+`pnpm dev` registers the extension with Raycast and starts a watcher. Once the commands appear in Raycast, press <kbd>Ctrl</kbd>+<kbd>C</kbd> — **the extension stays installed** and keeps working without the dev server. Search for `unquarantine` to run it.
 
-最容易踩的坑：App 被放行之后，`com.apple.quarantine` 属性**仍然留在文件上**，只是第一段的标志位加了一位。所以不能拿「有没有这个属性」当判断依据——这台机器上 70 个带属性的项里，实际会被拦的只有 1 个。
+Requires macOS, [Raycast](https://raycast.com), Node.js 22+ and [pnpm](https://pnpm.io) 11+. To remove it later, use Raycast's *Manage Extensions* command.
 
-判断规则（全量实测得出，标志位 + `spctl` 缺一不可）：
+<details>
+<summary>Optional: grant Accessibility permission</summary>
 
-| 条件 | 说明 |
-| --- | --- |
-| 有 `com.apple.quarantine` 属性 | 没有属性就不会被 Gatekeeper 拦 |
-| 标志位 **不含 `0x40`** | `0x40` = 用户点过 Open Anyway，已放行 |
-| `spctl --assess` 判定 rejected | 公证过的 App 即使没放行过也不会被拦 |
+Only **Open Anyway** needs it, and only to read the name of the blocked app out of the Settings window. Tick Raycast under *System Settings › Privacy & Security › Accessibility*. Without it the command still opens the right pane — it just can't tell you which app is blocked.
 
-三条同时成立才算「会被拦」。扫描时先用标志位筛（几乎不花时间，本机 70 个只剩 8 个），再对剩下的跑 `spctl`，整体约 2 秒。
+</details>
 
-⚠️ **不要用 `0x80` 判断**。它看着像「评估通过」，实际上被拦住的 App 也带着它——本机 `0x381` 这一组里，4 个公证 App 能开，CleanMyCodex 开不了，标志位完全一样。唯一可靠的组合就是上面那三条。
+## Preferences
 
-## 两条路的区别
+| Preference | Default | Effect |
+| --- | --- | --- |
+| Open after unquarantine | on | Launch the app right after clearing it |
+| Extra scan folders | – | Comma-separated paths beyond `/Applications`, `~/Applications` and `~/Downloads` |
+| Re-sign after unquarantine | off | Also run `codesign --force --deep --sign -`, for apps that still report "damaged" |
 
-**走 `Unquarantine Latest App`（推荐）**：直接删掉 `com.apple.quarantine` 属性，Gatekeeper 下次就不会拦。一个 Raycast 确认框搞定，不弹系统警告、不需要 Touch ID。
+## Having the attribute ≠ being blocked
 
-它只看**最近 24 小时内下载**、且真正会被拦的 `.app`（没有下载时间戳的一律排除）。找不到就提示「没有可解锁的 App」，不会去翻更早的东西——那些交给 `Unquarantine Apps` 手动挑。
+<img src="metadata/promo-detection.png" alt="Three conditions decide whether an app is really blocked" width="820">
 
-**走 `Open Anyway`**：保留系统原本的放行流程（系统设置 → Open Anyway → 二次确认 → Touch ID），只是帮你把面板打开并定位好。适合想让系统留下正式放行记录的场景。
+This is the trap most one-liner scripts fall into. When you approve an app, macOS **keeps** `com.apple.quarantine` on the file — it only flips a flag. So the attribute on its own tells you nothing. On the machine this was built for, 70 items carried it and exactly one was blocked.
 
-`Open Anyway` 识别被拦 App 的方式：系统设置里那个按钮是没有 accessibility title 的 SwiftUI 按钮，只能靠同一 group 里的提示文案（「"X" was blocked to protect your Mac.」）认出来。读这段文案需要 Raycast 有**辅助功能（Accessibility）权限**；没授权也不报错，面板照样停在 Security 分区，只是 toast 里说不出 App 名字。
+Three conditions have to hold at once:
 
-另外这条提示只在你**刚尝试打开过**某个被拦的 App 时才出现，退出系统设置后记录会被清掉。
+1. **The attribute is present.** No attribute, no Gatekeeper prompt.
+2. **Flags do not contain `0x40`.** That bit records that you already clicked Open Anyway.
+3. **`spctl --assess` rejects it.** Notarized apps are never blocked, approved or not.
 
-## 注意
+> [!WARNING]
+> Don't use `0x80` to decide. It looks like "assessment passed", but blocked apps carry it too — one blocked app and four perfectly working ones were all `0x381`. Only the three conditions above separate them reliably.
 
-隔离属性是 Gatekeeper 的一道防线。只对自己确认来源可信的 App 使用。
+Scanning stays cheap: the flags filter runs first (70 items down to 8 on a real machine), then `spctl` runs on what's left — about two seconds.
+
+## Two ways to unblock
+
+**Clear the attribute** — what `Unquarantine Latest App` does. Deletes `com.apple.quarantine`, so Gatekeeper stops asking. One Raycast confirm, no system dialogs, no Touch ID.
+
+It only looks at `.app` bundles downloaded in the **last 24 hours** that are genuinely blocked; anything without a download timestamp is skipped. Nothing matching means "No app to unlock" — older items are left to `Unquarantine Apps`.
+
+**Use Apple's flow** — what `Open Anyway` supports. System Settings → Open Anyway → confirm → Touch ID. Slower, but macOS records a formal approval. The command only opens and locates; it never clicks for you.
+
+<details>
+<summary>How the blocked app is identified</summary>
+
+The Open Anyway button in System Settings is a SwiftUI button with no accessibility title, so it can't be found by name. It is located instead by the notice next to it — *"X" was blocked to protect your Mac.* — and the app name is parsed out of that string.
+
+That notice only appears right after you have tried to open a blocked app, and it is cleared when System Settings quits. When it isn't there, the command simply leaves you on the Security section.
+
+</details>
+
+## Safety
+
+Quarantine is a real Gatekeeper defence. Clear it only for apps whose origin you trust — this extension makes approval faster, it doesn't make an untrusted app safe. Every command names the app and its download source before doing anything.
+
+## Development
+
+```bash
+pnpm dev     # watch mode, hot reload into Raycast
+pnpm build   # type-check and bundle
+pnpm lint    # Raycast lint rules
+```
+
+`src/lib/quarantine.ts` holds the scanning and clearing logic, `src/lib/open-anyway.ts` the Settings-window lookup. Each command is a single file under `src/`.
+
+## License
+
+MIT
