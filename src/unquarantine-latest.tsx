@@ -1,59 +1,63 @@
 import { Alert, Toast, closeMainWindow, confirmAlert, getPreferenceValues, showToast } from "@raycast/api";
+import { Strings, t } from "./lib/i18n";
 import { expandDirs, latestQuarantinedApp, openPath, unquarantine } from "./lib/quarantine";
 
 type Preferences = {
   extraPaths?: string;
   adhocSign?: boolean;
   openAfterUnquarantine?: boolean;
+  language?: string;
 };
 
-function describe(agent: string | undefined, downloadedAt: Date | undefined): string {
+function describe(s: Strings, agent: string | undefined, downloadedAt: Date | undefined): string {
   const parts: string[] = [];
-  if (agent) parts.push(`来自 ${agent}`);
+  if (agent) parts.push(s.fromAgent(agent));
   if (downloadedAt) parts.push(downloadedAt.toLocaleString());
   return parts.join(" · ");
 }
 
 export default async function Command() {
-  const { extraPaths, adhocSign, openAfterUnquarantine } = getPreferenceValues<Preferences>();
+  const { extraPaths, adhocSign, openAfterUnquarantine, language } = getPreferenceValues<Preferences>();
+  const s = t(language);
   const shouldOpen = openAfterUnquarantine ?? true;
 
   const item = await latestQuarantinedApp(expandDirs(extraPaths));
   if (!item) {
     await showToast({
       style: Toast.Style.Failure,
-      title: "没有可解锁的 App",
-      message: "24 小时内没有下载到被 Gatekeeper 拦住的 App",
+      title: s.nothingToUnlock,
+      message: s.nothingToUnlockDetail,
     });
     return;
   }
 
   const confirmed = await confirmAlert({
-    title: `解除「${item.name}」的隔离？`,
-    message: [item.path, describe(item.agent, item.downloadedAt)].filter(Boolean).join("\n"),
+    title: s.confirmTitle(item.name),
+    message: [item.path, describe(s, item.agent, item.downloadedAt)].filter(Boolean).join("\n"),
     icon: { fileIcon: item.path },
     primaryAction: {
-      title: shouldOpen ? "解除并打开" : "解除隔离",
+      title: shouldOpen ? s.unquarantineAndOpen : s.unquarantineOnly,
       style: Alert.ActionStyle.Default,
     },
-    dismissAction: { title: "取消" },
+    dismissAction: { title: s.cancel },
   });
   if (!confirmed) return;
 
   await closeMainWindow();
   const toast = await showToast({
     style: Toast.Style.Animated,
-    title: `正在解除「${item.name}」的隔离`,
+    title: s.unquarantining(item.name),
   });
   try {
     const { elevated } = await unquarantine(item.path, adhocSign ?? false);
     if (shouldOpen) await openPath(item.path);
     toast.style = Toast.Style.Success;
-    toast.title = `「${item.name}」已解除隔离`;
-    // toast.message = elevated ? "使用了管理员权限" : "无需 Touch ID，可以直接打开了";
+    toast.title = s.unquarantined(item.name);
+    // toast.message = elevated ? s.adminUsed : s.noTouchIdNeeded;
+    void elevated;
   } catch (error) {
     toast.style = Toast.Style.Failure;
-    toast.title = "解除隔离失败";
+    toast.title = s.unquarantineFailed;
     toast.message = error instanceof Error ? error.message : String(error);
   }
 }

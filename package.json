@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "unquarantine",
   "title": "Unquarantine",
-  "description": "一键解除未签名 App 的 Gatekeeper 隔离，免去在系统设置里反复找 Open Anyway",
+  "description": "Open Gatekeeper-blocked downloads from Raycast — one command, one confirm, no Touch ID",
   "icon": "command-icon.png",
   "author": "jack",
   "categories": [
@@ -16,63 +16,86 @@
       "name": "unquarantine-latest",
       "title": "Unquarantine Latest App",
       "subtitle": "Gatekeeper",
-      "description": "取 24 小时内下载、真正被 Gatekeeper 拦住的那个 App，确认后直接解除，无需 Touch ID",
+      "description": "Clear the most recent app Gatekeeper is blocking, after one confirmation",
       "mode": "no-view"
     },
     {
       "name": "open-anyway",
       "title": "Open Anyway",
       "subtitle": "Gatekeeper",
-      "description": "打开安全设置并定位到被阻止的 App，Open Anyway 由你自己点",
+      "description": "Open Security settings and locate the blocked app; you click Open Anyway",
       "mode": "no-view"
     },
     {
       "name": "unquarantine-apps",
       "title": "Unquarantine Apps",
       "subtitle": "Gatekeeper",
-      "description": "列出会被 Gatekeeper 拦住的 App，一键解除隔离并打开；可切换查看全部带隔离属性的项",
+      "description": "Browse apps Gatekeeper blocks, or everything carrying the quarantine attribute",
       "mode": "view"
     },
     {
       "name": "unquarantine-finder-selection",
       "title": "Unquarantine Finder Selection",
       "subtitle": "Gatekeeper",
-      "description": "对 Finder 中选中的文件/App 解除隔离",
+      "description": "Clear the quarantine attribute from the current Finder selection",
       "mode": "no-view"
     },
     {
       "name": "open-security-settings",
       "title": "Open Security Settings",
       "subtitle": "Gatekeeper",
-      "description": "直接跳到「系统设置 › 隐私与安全性 › Security」分区，无需滚动",
+      "description": "Jump straight to Privacy & Security › Security, no scrolling",
       "mode": "no-view"
     }
   ],
   "preferences": [
     {
       "name": "openAfterUnquarantine",
-      "title": "解除后自动打开",
-      "label": "Unquarantine Latest App 解除隔离后直接启动该 App",
+      "title": "After Unquarantining",
+      "label": "Launch the app right away",
       "type": "checkbox",
       "required": false,
-      "default": true
+      "default": true,
+      "description": "Applies to Unquarantine Latest App"
     },
     {
       "name": "extraPaths",
-      "title": "额外扫描目录",
-      "description": "除 /Applications、~/Applications、~/Downloads 外要扫描的目录，用英文逗号分隔",
+      "title": "Extra Scan Folders",
+      "description": "Comma-separated folders to scan in addition to /Applications, ~/Applications and ~/Downloads",
       "type": "textfield",
       "required": false,
       "default": ""
     },
     {
       "name": "adhocSign",
-      "title": "解除隔离后重新签名",
-      "label": "对 App 执行 codesign --sign -（ad-hoc）",
-      "description": "解决部分 App 去掉隔离属性后仍提示「已损坏」的问题",
+      "title": "Re-sign After Unquarantining",
+      "label": "Also run codesign --sign - (ad-hoc)",
+      "description": "For apps that still report being damaged after the attribute is cleared",
       "type": "checkbox",
       "required": false,
       "default": false
+    },
+    {
+      "name": "language",
+      "title": "Interface Language",
+      "type": "dropdown",
+      "required": false,
+      "default": "auto",
+      "description": "Language for messages and dialogs. Command names above are set by Raycast and cannot be translated.",
+      "data": [
+        {
+          "title": "Match System",
+          "value": "auto"
+        },
+        {
+          "title": "English",
+          "value": "en"
+        },
+        {
+          "title": "简体中文",
+          "value": "zh"
+        }
+      ]
     }
   ],
   "dependencies": {

@@ -74,11 +74,18 @@ Run **Unquarantine Apps**. If nothing is currently blocked the list is empty —
 
 ## Preferences
 
-| Preference                 | Default | Effect                                                                            |
-| -------------------------- | ------- | --------------------------------------------------------------------------------- |
-| Open after unquarantine    | on      | Launch the app right after clearing it                                            |
-| Extra scan folders         | –       | Comma-separated paths beyond `/Applications`, `~/Applications` and `~/Downloads`  |
-| Re-sign after unquarantine | off     | Also run `codesign --force --deep --sign -`, for apps that still report "damaged" |
+| Preference                 | Default      | Effect                                                                            |
+| -------------------------- | ------------ | --------------------------------------------------------------------------------- |
+| Interface language         | Match System | English or 简体中文 for messages and dialogs                                      |
+| Open after unquarantine    | on           | Launch the app right after clearing it                                            |
+| Extra scan folders         | –            | Comma-separated paths beyond `/Applications`, `~/Applications` and `~/Downloads`  |
+| Re-sign after unquarantine | off          | Also run `codesign --force --deep --sign -`, for apps that still report "damaged" |
+
+### Language
+
+Messages, dialogs and list labels are bilingual — English and 简体中文. "Match System" reads your macOS preferred languages and picks Chinese if that comes first; the dropdown overrides it.
+
+Command names, their descriptions and the preference labels themselves stay in English. That isn't a shortcut: Raycast has no i18n API. `environment` exposes `appearance` and `textSize` but no locale, and the [extension manifest schema](https://www.raycast.com/schemas/extension.json) accepts a single string for every `title` and `description`. Extensions that localize do it exactly like this one — their own string table plus a preference to pick the language.
 
 ## Having the attribute ≠ being blocked
 
