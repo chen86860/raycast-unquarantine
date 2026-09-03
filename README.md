@@ -34,27 +34,29 @@ This extension isn't on the Raycast Store, so you install it from source. It tak
 
 **You'll need:** macOS, [Raycast](https://raycast.com), Node.js 22+ and [pnpm](https://pnpm.io) 11+ (`brew install node pnpm`).
 
-**1. Build it**
+**1. Build it once**
 
 ```bash
 git clone https://github.com/chen86860/raycast-unquarantine.git
 cd raycast-unquarantine
 pnpm install
-pnpm dev
+pnpm build
 ```
 
-**2. Let it finish, then quit**
+That's all the terminal work. `pnpm build` finishes with `built extension successfully` — you don't need a dev server, and you never have to run this again unless you edit the code.
 
-`pnpm dev` installs the extension into Raycast and stays running as a file watcher. Wait for `built extension successfully`, then press <kbd>Ctrl</kbd>+<kbd>C</kbd>. **The extension stays installed** — the watcher is only for editing the code, and the commands keep working without it.
+**2. Import it into Raycast**
+
+Open Raycast, run the built-in **Import Extension** command, and select the `raycast-unquarantine` folder you just built.
 
 **3. Use it**
 
-Open Raycast and type `unquarantine`. Five commands show up; `Unquarantine Latest App` is the one you'll want most of the time.
+Type `unquarantine` in Raycast. Five commands show up; `Unquarantine Latest App` is the one you'll want most of the time.
 
 > [!TIP]
 > Give it a hotkey. In _Raycast Settings › Extensions › Unquarantine_, assign an alias (say `unq`) or a keyboard shortcut to **Unquarantine Latest App**. Then unblocking a fresh download is: hotkey, Enter. The same panel holds this extension's preferences.
 
-Prefer not to use the terminal watcher? Raycast's built-in **Import Extension** command points at a folder on disk and does the same registration — you still need `pnpm install` first. To remove the extension later, use **Manage Extensions**.
+To remove the extension later, use Raycast's **Manage Extensions** command.
 
 <details>
 <summary>Optional: grant Accessibility permission</summary>
@@ -118,8 +120,10 @@ Quarantine is a real Gatekeeper defence. Clear it only for apps whose origin you
 
 ## Development
 
+Only needed if you want to change the code — installing doesn't require any of this.
+
 ```bash
-pnpm dev     # watch mode, hot reload into Raycast
+pnpm dev     # watch mode, hot reloads into Raycast as you edit
 pnpm build   # type-check and bundle
 pnpm lint    # Raycast lint rules
 ```

@@ -34,27 +34,29 @@
 
 **准备：** macOS、[Raycast](https://raycast.com)、Node.js 22+ 和 [pnpm](https://pnpm.io) 11+（`brew install node pnpm`）。
 
-**1. 构建**
+**1. 本地构建一次**
 
 ```bash
 git clone https://github.com/chen86860/raycast-unquarantine.git
 cd raycast-unquarantine
 pnpm install
-pnpm dev
+pnpm build
 ```
 
-**2. 等它跑完，然后退出**
+终端里就这些。`pnpm build` 结束时会打印 `built extension successfully`——不需要开发服务器，除非你要改代码，否则这一步不用再跑第二次。
 
-`pnpm dev` 会把扩展装进 Raycast，并作为文件监听常驻。看到 `built extension successfully` 之后按 <kbd>Ctrl</kbd>+<kbd>C</kbd> 退出即可。**扩展会保留**——监听只是给改代码用的，命令本身不依赖它。
+**2. 导入 Raycast**
+
+打开 Raycast，运行内置的 **Import Extension** 命令，选择刚构建好的 `raycast-unquarantine` 文件夹。
 
 **3. 开始用**
 
-打开 Raycast 输入 `unquarantine`，五条命令都在。日常用得最多的是 `Unquarantine Latest App`。
+在 Raycast 里输入 `unquarantine`，五条命令都在。日常用得最多的是 `Unquarantine Latest App`。
 
 > [!TIP]
 > 给它设个快捷键。在「Raycast Settings › Extensions › Unquarantine」里给 **Unquarantine Latest App** 配一个别名（比如 `unq`）或热键，之后放行一个新下载的 App 就是：热键、回车。这个面板里也放着本扩展的设置项。
 
-不想用终端里的监听进程？Raycast 自带 **Import Extension** 命令，选中本地文件夹即可完成同样的注册——但仍需先跑 `pnpm install`。想卸载用 **Manage Extensions**。
+想卸载用 Raycast 的 **Manage Extensions** 命令。
 
 <details>
 <summary>可选：授予辅助功能权限</summary>
@@ -118,8 +120,10 @@ pnpm dev
 
 ## 开发
 
+只有想改代码时才需要，安装用不到下面这些。
+
 ```bash
-pnpm dev     # 监听模式，热重载进 Raycast
+pnpm dev     # 监听模式，边改边热重载进 Raycast
 pnpm build   # 类型检查 + 打包
 pnpm lint    # Raycast lint 规则
 ```
